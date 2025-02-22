@@ -56,12 +56,12 @@ q(x_t|x_{t-1}) = N(x_t; √(1-β_t)x_{t-1}, β_tI)
 
 通过重参数化技巧，可以直接从x_0采样到任意时刻t：
 
-x_t = √(ᾱ_t)x_0 + √(1-ᾱ_t)ε
+$$x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\varepsilon$$
 
 其中：
-- α_t = 1 - β_t
-- ᾱ_t = ∏(t,i=1)(α_i)
-- ε ~ N(0, I)
+- $\alpha_t = 1 - \beta_t$
+- $\bar{\alpha}_t = \prod_{i=1}^t\alpha_i$
+- $\varepsilon \sim N(0, I)$
 
 #### 反向扩散过程
 反向扩散过程是一个逐步去噪的过程，其条件概率为：
@@ -75,10 +75,10 @@ p_θ(x_{t-1}|x_t) = N(x_{t-1}; μ_θ(x_t, t), σ_t^2I)
 预测x_{t-1}的计算过程：
 
 1. 预测x_0：
-x_0 = (x_t - √(1-ᾱ_t)ε_θ) / √(ᾱ_t)
+$$x_0 = \frac{x_t - \sqrt{1-\bar{\alpha}_t}\varepsilon_\theta}{\sqrt{\bar{\alpha}_t}}$$
 
 2. 计算均值：
-μ_t = √(α_t)(1-ᾱ_{t-1})/(1-ᾱ_t)x_0 + √(ᾱ_{t-1})β_t/(1-ᾱ_t)x_t
+$$\mu_t = \frac{\sqrt{\alpha_t}(1-\bar{\alpha}_{t-1})}{1-\bar{\alpha}_t}x_0 + \frac{\sqrt{\bar{\alpha}_{t-1}}\beta_t}{1-\bar{\alpha}_t}x_t$$
 
 3. 添加噪声：
 x_{t-1} = μ_t + σ_tε, ε ~ N(0, I)
@@ -87,14 +87,14 @@ x_{t-1} = μ_t + σ_tε, ε ~ N(0, I)
 调度器实现了以下关键功能：
 
 1. 噪声调度初始化：
-- 线性β调度：β_t从β_start到β_end
-- 计算α系数：α_t = 1 - β_t
-- 计算累积α：ᾱ_t = ∏(α_i)
+- 线性$\beta$调度：$\beta_t$从$\beta_{start}$到$\beta_{end}$
+- 计算$\alpha$系数：$\alpha_t = 1 - \beta_t$
+- 计算累积$\alpha$：$\bar{\alpha}_t = \prod\alpha_i$
 
 2. 前向过程（add_noise）：
-- 根据时间步t获取对应的ᾱ_t
-- 计算噪声系数√(1-ᾱ_t)
-- 合成带噪声的图像x_t
+- 根据时间步$t$获取对应的$\bar{\alpha}_t$
+- 计算噪声系数$\sqrt{1-\bar{\alpha}_t}$
+- 合成带噪声的图像$x_t$
 
 3. 反向过程（step）：
 - 预测原始图像x_0
@@ -127,7 +127,7 @@ $$PE(t, 2i+1) = cos(t / 10000^(2i/d))$$
 2. 计算基础频率：ω = ln(10000)/(d/2-1)
 3. 生成不同频率的波形：f(i) = exp(-ω * i)，i∈[0, d/2)
 4. 将时间信息t与频率信息结合：t * f(i)
-5. 分别计算sin(t * f(i))和cos(t * f(i))
+5. 分别计算$\sin(t \cdot f(i))$和$\cos(t \cdot f(i))$
 6. 连接sin和cos得到最终的d维位置嵌入
 
 #### 优势

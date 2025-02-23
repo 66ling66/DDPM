@@ -52,10 +52,22 @@ class Trainer:
                 loss = self.train_step(batch)
                 epoch_loss += loss
                 pbar.set_description(f"Epoch {epoch}, Loss: {loss:.4f}")
-            print(f"Epoch {epoch} average loss: {epoch_loss/len(train_loader):.4f}")
+            avg_loss = epoch_loss/len(train_loader)
+            print(f"Epoch {epoch} average loss: {avg_loss:.4f}")
+            
+            # 每10个epoch保存一次权重
+            if (epoch + 1) % 10 == 0:
+                checkpoint = {
+                    'epoch': epoch,
+                    'model_state_dict': self.model.state_dict(),
+                    'optimizer_state_dict': self.optimizer.state_dict(),
+                    'loss': avg_loss,
+                }
+                torch.save(checkpoint, f'checkpoint_epoch_{epoch+1}.pth')
+                print(f"Saved checkpoint at epoch {epoch+1}")
 
     @torch.no_grad()
-    def sample(self, batch_size=1, image_size=28):
+    def sample(self, batch_size=1, image_size=32):
         # 从标准正态分布采样
         x = torch.randn(batch_size, 1, image_size, image_size).to(self.device)
 
@@ -70,6 +82,44 @@ class Trainer:
         x = torch.clamp(x, 0, 1)
         return x
 
+# def test_trainer():
+#     # 设置设备
+#     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#     print(f"使用设备: {device}")
+
+#     # 创建小型测试数据集
+#     batch_size = 4
+#     image_size = 32
+#     test_images = torch.randn(batch_size, 1, image_size, image_size).to(device)  # [4, 1, 28, 28]
+#     test_labels = torch.zeros(batch_size).to(device)
+#     batch = (test_images, test_labels)  # 直接构造batch数据
+
+#     # 初始化模型和调度器
+#     model = UNet(in_channels=1)
+#     scheduler = DDPMScheduler()
+#     trainer = Trainer(model, scheduler, device)
+
+#     # 测试train_step
+#     print("\n测试train_step:")
+#     loss = trainer.train_step(batch)
+#     print(f"训练步骤损失: {loss}")
+
+#     # 验证模型和数据是否在正确的设备上
+#     print("\n验证设备使用情况:")
+#     print(f"模型设备: {next(trainer.model.parameters()).device}")
+#     print(f"优化器状态: {trainer.optimizer.state_dict()['param_groups'][0]['lr']}")
+
+#     # 测试采样功能
+#     print("\n测试采样功能:")
+#     samples = trainer.sample(batch_size=2, image_size=32)
+#     print(f"生成样本形状: {samples.shape}")
+#     print(f"样本值范围: [{samples.min():.4f}, {samples.max():.4f}]")
+
+#     print("\n所有测试完成!")
+
+# if __name__ == "__main__":
+#     test_trainer()
+
 def main():
     # 设置设备
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -77,6 +127,7 @@ def main():
     # 加载MNIST数据集
     transform = transforms.Compose([
         transforms.ToTensor(),
+        transforms.Pad(2),  # 在每个边缘添加2个像素的padding，将28x28变为32x32
     ])
     dataset = datasets.MNIST(root="data", train=True, transform=transform, download=True)
     train_loader = DataLoader(dataset, batch_size=128, shuffle=True)

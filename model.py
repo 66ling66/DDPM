@@ -42,7 +42,7 @@ class Block(nn.Module):
     该模块可以根据配置执行上采样或下采样操作，并将时间信息注入到特征图中
     """
     def __init__(self, in_ch, out_ch, time_emb_dim, up=False):
-        """初始化Block模块
+        """
         Args:
             in_ch (int): 输入通道数
             out_ch (int): 输出通道数
@@ -55,14 +55,14 @@ class Block(nn.Module):
         
         # 根据up参数选择上采样或下采样配置
         if up:
-            # 上采样时输入通道翻倍（因为要考虑skip connection）
-            self.conv1 = nn.Conv2d(2*in_ch, out_ch, 3, padding=1)
-            # 使用转置卷积进行上采样
+            # 上采样时需要考虑残差连接带来的通道数
+            self.conv1 = nn.Conv2d(2 * in_ch, out_ch, 3, padding=1)
+            # 使用转置卷积进行上采样，确保输出尺寸与残差连接匹配
             self.transform = nn.ConvTranspose2d(out_ch, out_ch, 4, 2, 1)
         else:
             # 下采样时使用普通卷积
             self.conv1 = nn.Conv2d(in_ch, out_ch, 3, padding=1)
-            # 使用步长为2的卷积进行下采样
+            # 使用步长为2的卷积进行下采样，padding=1以保持特征图尺寸的一致性
             self.transform = nn.Conv2d(out_ch, out_ch, 4, 2, 1)
             
         # 第二个卷积层保持通道数不变
@@ -150,9 +150,11 @@ class UNet(nn.Module):
         x = F.relu(self.bottleneck2(x))
         
         # Decoder
-        for up, residual in zip(self.ups, residuals[::-1]):
-            x = torch.cat((x, residual), dim=1)
-            x = up(x, t)
+        residuals = residuals[::-1]
+        for i, (up, residual) in enumerate(zip(self.ups, residuals)):
+            
+            # print(f"x_shape:{x.shape} residual_shape:{residual.shape}")
+            x = up(torch.cat([x, residual], dim=1), t)
             
         return self.output(x)
 

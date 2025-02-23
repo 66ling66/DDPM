@@ -46,9 +46,14 @@ class DDPMScheduler:
         返回：
           x_t: 加噪后的图像
         """
+        # 确保张量在正确的设备上
+        device = x_0.device
+        sqrt_alphas_cumprod = self.sqrt_alphas_cumprod.to(device)
+        sqrt_one_minus_alphas_cumprod = self.sqrt_one_minus_alphas_cumprod.to(device)
+        
         # 调整当前时刻的系数维度
-        sqrt_alphas_cumprod_t = self.sqrt_alphas_cumprod[timesteps].reshape(-1, 1, 1, 1)
-        sqrt_one_minus_alphas_cumprod_t = self.sqrt_one_minus_alphas_cumprod[timesteps].reshape(-1, 1, 1, 1)
+        sqrt_alphas_cumprod_t = sqrt_alphas_cumprod[timesteps].reshape(-1, 1, 1, 1)
+        sqrt_one_minus_alphas_cumprod_t = sqrt_one_minus_alphas_cumprod[timesteps].reshape(-1, 1, 1, 1)
         
         # 计算 x_t = √{\bar{α}_t} x_0 + √{1- \bar{α}_t} noise
         x_t = sqrt_alphas_cumprod_t * x_0 + sqrt_one_minus_alphas_cumprod_t * noise
@@ -91,7 +96,7 @@ class DDPMScheduler:
         
         # 反向更新：
         # \(x_{t-1} = \mu_\theta(x_t,t) + \sigma_t\, z\)，其中 \(\sigma_t = \sqrt{\mathrm{posterior\_variance}_t}\)
-        variance = 0.0 if t == 0 else self.posterior_variance[t]
+        variance = torch.tensor(0.0).to(sample.device) if t == 0 else self.posterior_variance[t].to(sample.device)
         std = torch.sqrt(variance)
         pred_prev_sample = pred_mean + std * noise
         

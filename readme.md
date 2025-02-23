@@ -115,9 +115,9 @@ $$\sigma_t = \sqrt{\beta_t \cdot \frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_t}}$
 调度器实现了以下关键功能：
 
 1. 噪声调度初始化：
-- 线性$\beta$调度：$$\beta_t$从$\beta_{start}$到$\beta_{end}$$
-- 计算$\alpha$系数：$$\alpha_t = 1 - \beta_t$$
-- 计算累积$\alpha$：$$\bar{\alpha}_t = \prod\alpha_i$$
+- 线性$\beta$调度：$\beta_t$从$\beta_{start}$到$\beta_{end}$
+- 计算$\alpha$系数：$\alpha_t = 1 - \beta_t$
+- 计算累积$\alpha$：$\bar{\alpha}_t = \prod\alpha_i$
 
 2. 前向过程（add_noise）：
 - 根据时间步$t$获取对应的$\bar{\alpha}_t$

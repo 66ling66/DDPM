@@ -73,7 +73,7 @@ $$x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\varepsilon$$
 
 其中：
 - $\alpha_t = 1 - \beta_t$
-- $\bar{\alpha}_t = \prod_{i=1}^t\alpha_i$
+- ![](images/alpha_t.svg)
 - $\varepsilon \sim N(0, I)$
 
 #### 反向扩散过程
@@ -88,10 +88,10 @@ $$p_\theta(x_{t-1}|x_t) = N(x_{t-1}; \mu_\theta(x_t, t), \sigma_t^2I)$$
 预测$x_{t-1}$的计算过程：
 
 1. 预测$x_0$：
-$$\hat{x}_0 = \frac{x_t - \sqrt{1-\bar{\alpha}_t}\epsilon_\theta(x_t,t)}{\sqrt{\bar{\alpha}_t}}$$
+![公式](images/x0.svg)
 
 2. 计算后验均值：
-$$\mu_\theta(x_t, t) = \frac{\sqrt{\bar\alpha_{t-1}}\beta_t}{1-\bar{\alpha}_t}\hat{x}_0 + \frac{\sqrt{\alpha_t}(1-\bar{\alpha}_{t-1})}{1-\bar{\alpha}_t}x_t$$
+![](images/mu.svg)
 
 3. 采样更新：
 $$x_{t-1} = \mu_\theta(x_t,t) + \sigma_t z, \quad z \sim \mathcal{N}(0,I)$$
@@ -115,9 +115,9 @@ $$\sigma_t = \sqrt{\beta_t \cdot \frac{1-\bar{\alpha}_{t-1}}{1-\bar{\alpha}_t}}$
 调度器实现了以下关键功能：
 
 1. 噪声调度初始化：
-- 线性$\beta$调度：$\beta_t$从$\beta_{start}$到$\beta_{end}$
-- 计算$\alpha$系数：$\alpha_t = 1 - \beta_t$
-- 计算累积$\alpha$：$\bar{\alpha}_t = \prod\alpha_i$
+- 线性$\beta$调度：$$\beta_t$从$\beta_{start}$到$\beta_{end}$$
+- 计算$\alpha$系数：$$\alpha_t = 1 - \beta_t$$
+- 计算累积$\alpha$：$$\bar{\alpha}_t = \prod\alpha_i$$
 
 2. 前向过程（add_noise）：
 - 根据时间步$t$获取对应的$\bar{\alpha}_t$

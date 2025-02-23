@@ -39,7 +39,7 @@ python inference.py
 ### 生成样本
 下面展示了模型在训练过程中生成的手写数字样本：
 
-![生成样本](images/sample.png)
+![生成样本](images/sample1.png)
 
 从生成结果可以看出，模型成功学习到了MNIST数据集中手写数字的特征，能够生成清晰、多样的数字图像。
 

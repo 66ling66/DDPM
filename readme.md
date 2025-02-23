@@ -47,16 +47,18 @@ python train.py
 #### 前向扩散过程
 前向扩散过程是一个逐步添加噪声的马尔可夫链过程，其数学表达式为：
 
-q(x_t|x_{t-1}) = N(x_t; √(1-β_t)x_{t-1}, β_tI)
+$q(x_t|x_{t-1}) = N(x_t; \sqrt{1-\beta_t}x_{t-1}, \beta_tI)$
 
 其中：
-- β_t 是噪声调度参数，从β_start线性增加到β_end
-- x_t 是t时刻的噪声图像
-- x_{t-1} 是t-1时刻的图像
+- $\beta_t$ 是噪声调度参数，从$\beta_{start}$线性增加到$\beta_{end}$
+- $x_t$ 是t时刻的噪声图像
+- $x_{t-1}$ 是t-1时刻的图像
 
-通过重参数化技巧，可以直接从x_0采样到任意时刻t：
+通过重参数化技巧，可以直接从$x_0$采样到任意时刻t：
 
-$$x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\varepsilon$$
+$x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\varepsilon$
+
+这里默认 $$ beta_{start}=1e-4, beta_{end}=0.02 $$ 思考一下为什么默认值是这个
 
 其中：
 - $\alpha_t = 1 - \beta_t$
@@ -66,22 +68,22 @@ $$x_t = \sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\varepsilon$$
 #### 反向扩散过程
 反向扩散过程是一个逐步去噪的过程，其条件概率为：
 
-p_θ(x_{t-1}|x_t) = N(x_{t-1}; μ_θ(x_t, t), σ_t^2I)
+$p_\theta(x_{t-1}|x_t) = N(x_{t-1}; \mu_\theta(x_t, t), \sigma_t^2I)$
 
 其中：
-- μ_θ是神经网络预测的均值
-- σ_t^2是方差，可以是固定值或学习得到
+- $\mu_\theta$是神经网络预测的均值
+- $\sigma_t^2$是方差，可以是固定值或学习得到
 
-预测x_{t-1}的计算过程：
+预测$x_{t-1}$的计算过程：
 
-1. 预测x_0：
-$$x_0 = \frac{x_t - \sqrt{1-\bar{\alpha}_t}\varepsilon_\theta}{\sqrt{\bar{\alpha}_t}}$$
+1. 预测$x_0$：
+$\hat{x}_0 = \frac{x_t - \sqrt{1-\bar{\alpha}_t}\epsilon_\theta(x_t,t)}{\sqrt{\bar{\alpha}_t}}$
 
-2. 计算均值：
-$$\mu_t = \frac{\sqrt{\alpha_t}(1-\bar{\alpha}_{t-1})}{1-\bar{\alpha}_t}x_0 + \frac{\sqrt{\bar{\alpha}_{t-1}}\beta_t}{1-\bar{\alpha}_t}x_t$$
+2. 计算后验均值：
+$\mu_\theta(x_t, t) = \frac{\sqrt{\alpha_{t-1}}\beta_t}{1-\bar{\alpha}_t}\hat{x}_0 + \frac{\sqrt{\alpha_t}(1-\bar{\alpha}_{t-1})}{1-\bar{\alpha}_t}x_t$
 
-3. 添加噪声：
-x_{t-1} = μ_t + σ_tε, ε ~ N(0, I)
+3. 采样更新：
+$x_{t-1} = \mu_\theta(x_t,t) + \sigma_t z, \quad z \sim \mathcal{N}(0,I)$
 
 #### 实现细节
 调度器实现了以下关键功能：
@@ -97,8 +99,8 @@ x_{t-1} = μ_t + σ_tε, ε ~ N(0, I)
 - 合成带噪声的图像$x_t$
 
 3. 反向过程（step）：
-- 预测原始图像x_0
-- 计算去噪均值μ_t
+- 预测原始图像$x_0$
+- 计算去噪均值$\mu_t$
 - 添加适量随机噪声
 
 ### 时间步长编码
@@ -112,22 +114,23 @@ x_{t-1} = μ_t + σ_tε, ε ~ N(0, I)
 #### 数学原理
 时间步长编码采用正弦位置编码（Sinusoidal Position Embeddings）的方法，其数学表达式为：
 
-$$PE(t, 2i) = sin(t / 10000^(2i/d))$$
-$$PE(t, 2i+1) = cos(t / 10000^(2i/d))$$
+$PE(t, 2i) = sin(t / 10000^{2i/d})$
+
+$PE(t, 2i+1) = cos(t / 10000^{2i/d})$
 
 其中：
-- t 是时间步长
-- i 是维度的索引
-- d 是嵌入维度
-- PE(t,k) 表示时间t在第k维的编码值
+- $t$ 是时间步长
+- $i$ 是维度的索引
+- $d$ 是嵌入维度
+- $PE(t,k)$ 表示时间t在第k维的编码值
 
 #### 实现细节
 时间编码的计算过程：
 1. 将输入维度d分为两半，分别用于sin和cos计算
-2. 计算基础频率：ω = ln(10000)/(d/2-1)
-3. 生成不同频率的波形：f(i) = exp(-ω * i)，i∈[0, d/2)
-4. 将时间信息t与频率信息结合：t * f(i)
-5. 分别计算$\sin(t \cdot f(i))$和$\cos(t \cdot f(i))$
+2. 计算基础频率：$\omega = ln(10000)/(d/2-1)$
+3. 生成不同频率的波形：$f(i) = exp(-\omega \cdot i)$，$i\in[0, d/2)$
+4. 将时间信息t与频率信息结合：$t \cdot f(i)$
+5. 分别计算$sin(t \cdot f(i))$和$cos(t \cdot f(i))$
 6. 连接sin和cos得到最终的d维位置嵌入
 
 #### 优势
